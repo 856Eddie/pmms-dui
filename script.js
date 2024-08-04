@@ -22,10 +22,6 @@ function applyPhonographFilter(player) {
 
     if (player.youTubeApi) {
         var html5Player = player.youTubeApi.getIframe().contentWindow.document.querySelector('.html5-main-video');
-        
-        // Detect and skip ads
-        player.youTubeApi.getIframe().contentWindow.document.querySelectorAll('.ad-showing').forEach(ad => ad.remove());
-        
         source = context.createMediaElementSource(html5Player);
     } else if (player.hlsPlayer) {
         source = context.createMediaElementSource(player.hlsPlayer.media);
@@ -93,10 +89,6 @@ function applyRadioFilter(player) {
 
     if (player.youTubeApi) {
         var html5Player = player.youTubeApi.getIframe().contentWindow.document.querySelector('.html5-main-video');
-
-        // Detect and skip ads
-        player.youTubeApi.getIframe().contentWindow.document.querySelectorAll('.ad-showing').forEach(ad => ad.remove());
-
         source = context.createMediaElementSource(html5Player);
     } else if (player.hlsPlayer) {
         source = context.createMediaElementSource(player.hlsPlayer.media);
@@ -497,3 +489,31 @@ window.addEventListener('load', () => {
         }
     });
 });
+
+// Add MutationObserver to detect and remove ads
+function removeYouTubeAds(player) {
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            if (mutation.type === 'childList') {
+                const ads = player.querySelectorAll('.ad-showing, .video-ads, .ytp-ad-module');
+                ads.forEach(ad => ad.remove());
+            }
+        });
+    });
+
+    const config = { childList: true, subtree: true };
+    observer.observe(player, config);
+}
+
+// Assuming `initPlayer` is where the player is created and configured
+function initPlayer(id, handle, options) {
+    var player = document.createElement('video');
+    player.id = id;
+    player.src = resolveUrl(options.url);
+    document.body.appendChild(player);
+
+    // Start observing for ads
+    removeYouTubeAds(player);
+
+    // Rest of the initPlayer code...
+}
